@@ -1,4 +1,6 @@
 using Elsa.Extensions;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +9,9 @@ builder.Services.AddControllersWithViews();
 
 //ELSA
 builder.Services.AddElsaCore(options =>
-options.AddHttpActivities()).AddElsaApiEndpoints();
+options
+.UseEntityFrameworkPersistence(ef => ef.UseSqlite("Data Source=elsa.db;"))
+.AddHttpActivities()).AddElsaApiEndpoints();
 
 
 var app = builder.Build();
