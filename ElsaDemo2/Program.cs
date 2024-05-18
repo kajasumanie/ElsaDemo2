@@ -12,8 +12,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+
 
 builder.Services.AddElsaCore(options =>
     options
@@ -22,6 +21,8 @@ builder.Services.AddElsaCore(options =>
         .AddWorkflow<HelloWorld>())
     .AddElsaApiEndpoints();
 
+// Add services to the container.
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -46,5 +47,13 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Map Elsa workflows.
+//app.UseEndpoints(endpoints =>
+//{
+//    endpoints.MapControllers();
+//    endpoints.MapRazorPages();
+//    endpoints.MapWorkflowsApi();
+//});
 
 app.Run();
