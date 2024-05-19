@@ -29,7 +29,8 @@ builder.Services.AddElsaCore(options =>
     options
         .UseEntityFrameworkPersistence(ef => ef.UseSqlite("Data Source=elsa.db;"), true)
         .AddHttpActivities()
-        .AddWorkflow<HelloWorld>())
+        .AddWorkflow<HelloWorld>()
+    .AddWorkflow<TestingWorkflow>())
     .AddElsaApiEndpoints();
 
 builder.Services.AddControllersWithViews();
