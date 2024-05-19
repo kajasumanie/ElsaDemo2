@@ -1,17 +1,28 @@
-using Elsa;
-using Elsa.Activities.Http.Options;
-using Elsa.Events;
-using Elsa.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 
-using Elsa.Activities.Http.Extensions;
 using ElsaDemo2.WorkFlows;
-using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Persistence.EntityFrameworkCore.DbContexts;
+using ElsaDemo2.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//builder.Services.AddDbContext<ElsaContext>(options =>
+//{
+//    options.UseSqlite("Data Source=elsa.db;");
+//});
+
+//builder.Services.AddDbContext<ElsaContext>(options =>
+//{
+//    options.UseSqlite("Data Source=elsa.db;");
+//});
+
+builder.Services.AddDbContextFactory<ElsaContext>(options =>
+{
+    options.UseSqlite("Data Source=elsa.db;");
+});
+
+builder.Services.AddScoped<BinApprovalController>();
 
 
 builder.Services.AddElsaCore(options =>
@@ -21,16 +32,15 @@ builder.Services.AddElsaCore(options =>
         .AddWorkflow<HelloWorld>())
     .AddElsaApiEndpoints();
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -44,16 +54,14 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Map Elsa workflows.
-//app.UseEndpoints(endpoints =>
-//{
-//    endpoints.MapControllers();
-//    endpoints.MapRazorPages();
-//    endpoints.MapWorkflowsApi();
-//});
 
 app.Run();
