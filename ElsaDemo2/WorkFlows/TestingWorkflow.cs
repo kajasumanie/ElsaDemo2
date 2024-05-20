@@ -34,20 +34,24 @@ namespace ElsaDemo2.WorkFlows
                 .Then<Fork>(activity => activity.WithBranches("Approve", "Reject"), fork =>
                 {
                     fork
-                        .When("Approve")
-                        .SignalReceived("Approve")
-                        .WriteHttpResponse(
-                            HttpStatusCode.OK,
-                            "<h1>Bin Approved and send for a person to collection Sample.</p>",
-                            "text/html")
-                        .ThenNamed("Join");
+                                     .When("Approve")
+                                     .HttpEndpoint(activity => activity
+                                         .WithPath("/v1/bins/approve")
+                                         .WithMethod(HttpMethod.Post.Method))
+                                     .WriteHttpResponse(
+                                         HttpStatusCode.OK,
+                                         "<h1>Bin Approved and sent for a person to collect sample.</h1>",
+                                         "text/html")
+                                     .ThenNamed("Join");
 
                     fork
                         .When("Reject")
-                        .SignalReceived("Reject")
+                        .HttpEndpoint(activity => activity
+                            .WithPath("/v1/bins/reject")
+                            .WithMethod(HttpMethod.Post.Method))
                         .WriteHttpResponse(
                             HttpStatusCode.OK,
-                            "<h1>Bin Rejected for retest.</p>",
+                            "<h1>Bin Rejected for retest.</h1>",
                             "text/html")
                         .ThenNamed("Join");
                 })
