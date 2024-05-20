@@ -2,6 +2,7 @@
 using System.Net.Http;
 
 using Elsa.Activities.ControlFlow;
+using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Activities.Email;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Extensions;
@@ -9,8 +10,11 @@ using Elsa.Activities.Http.Models;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Temporal;
 using Elsa.Builders;
+using Elsa.Models;
 
 using NodaTime;
+
+using static ElsaDemo2.Controllers.BinApprovalController;
 
 
 
@@ -26,36 +30,31 @@ namespace ElsaDemo2.WorkFlows
                     .WithPath("/v1/bins")
                     .WithMethod(HttpMethod.Post.Method)
                     .WithReadContent())
-                .SetVariable("Bin", context => context.GetInput<HttpRequestModel>()!.Body)
+                //.SetVariable("BinId", context => context.GetInput<HttpRequestModel>().GetBody<InitiateRequest>().BinId)
+                //.SetVariable("User", context => context.GetInput<HttpRequestModel>().GetBody<InitiateRequest>().User)
+                .Then(context => context.SetVariable("InstanceId", context.WorkflowInstance.Id))
                 .WriteHttpResponse(
                     HttpStatusCode.OK,
                     "<h1>Request for Approval Sent</h1><p>Your bin has been received and will be reviewed shortly.</p>",
                     "text/html")
-                .Then<Fork>(activity => activity.WithBranches("Approve", "Reject"), fork =>
-                {
-                    fork
-                                     .When("Approve")
-                                     .HttpEndpoint(activity => activity
-                                         .WithPath("/v1/bins/approve")
-                                         .WithMethod(HttpMethod.Post.Method))
-                                     .WriteHttpResponse(
-                                         HttpStatusCode.OK,
-                                         "<h1>Bin Approved and sent for a person to collect sample.</h1>",
-                                         "text/html")
-                                     .ThenNamed("Join");
+                .SignalReceived("Approve/Reject")
+                .SetVariable("IsApproved", context => ((ApproveRequest)context.GetInput<WorkflowInput>().Input).ApproveStatus)
+                .Then<If>(
+                    activity => activity
+                        .WithCondition(context => context.GetVariable<bool>("IsApproved")),
+                    ifElse =>
+                    {
+                        ifElse
+                            .When(Elsa.OutcomeNames.True)
+                            .SetVariable("TestStatus", "Approved")
+                            .ThenNamed("Join");
 
-                    fork
-                        .When("Reject")
-                        .HttpEndpoint(activity => activity
-                            .WithPath("/v1/bins/reject")
-                            .WithMethod(HttpMethod.Post.Method))
-                        .WriteHttpResponse(
-                            HttpStatusCode.OK,
-                            "<h1>Bin Rejected for retest.</h1>",
-                            "text/html")
-                        .ThenNamed("Join");
-                })
-                .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join")
+                        ifElse
+                            .When(Elsa.OutcomeNames.False)
+                            .SetVariable("TestStatus", "Rejected")
+                            .ThenNamed("Join");
+                    })
+                .Add<Elsa.Activities.ControlFlow.Join>(join => join.WithMode(Elsa.Activities.ControlFlow.Join.JoinMode.WaitAny)).WithName("Join")
                 .WriteHttpResponse(HttpStatusCode.OK, "Thanks for your work!", "text/html");
         }
     }
